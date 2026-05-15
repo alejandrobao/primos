@@ -5,14 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>100 Primeros Números Primos</title>
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
+  body { font-family: system-ui, sans-serif; max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
   h1 { text-align: center; }
+  canvas { display: block; margin: 0 auto 2rem; border: 1px solid #ddd; border-radius: 8px; }
   ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 0.5rem; list-style: none; padding: 0; }
   li { background: #f0f0f0; border-radius: 6px; padding: 0.5rem; text-align: center; font-weight: 600; }
 </style>
 </head>
 <body>
 <h1>100 Primeros Números Primos</h1>
+<canvas id="spiral" width="600" height="600"></canvas>
 <ul id="primes"></ul>
 <script>
   function esPrimo(n) {
@@ -20,9 +22,63 @@
     for (let i = 2; i * i <= n; i++) if (n % i === 0) return false;
     return true;
   }
+
   const primes = [];
   for (let n = 2; primes.length < 100; n++) if (esPrimo(n)) primes.push(n);
   document.getElementById('primes').innerHTML = primes.map(p => `<li>${p}</li>`).join('');
+
+  // Ulam spiral
+  const maxN = primes[primes.length - 1];
+  const size = Math.ceil(Math.sqrt(maxN)) | 1;
+  const canvas = document.getElementById('spiral');
+  const ctx = canvas.getContext('2d');
+  const cell = canvas.width / size;
+  const cx = Math.floor(size / 2);
+  const cy = Math.floor(size / 2);
+  const pos = Array.from({ length: size }, () => Array(size).fill(0));
+
+  let x = cx, y = cy, dx = 1, dy = 0, step = 1, stepCount = 0, total = 0;
+  for (let n = 1; n <= maxN; n++) {
+    pos[y][x] = n;
+    x += dx; y += dy; total++;
+    if (total === step) {
+      total = 0;
+      [dx, dy] = [-dy, dx]; // rotate right
+      stepCount++;
+      if (stepCount === 2) { stepCount = 0; step++; }
+    }
+  }
+
+  const primeSet = new Set(primes);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const fontSize = Math.max(6, Math.min(14, cell * 0.35));
+  ctx.font = `${fontSize}px system-ui, sans-serif`;
+
+  for (let row = 0; row < size; row++) {
+    for (let col = 0; col < size; col++) {
+      const num = pos[row][col];
+      if (num === 0) continue;
+      const px = col * cell + cell / 2;
+      const py = row * cell + cell / 2;
+      if (primeSet.has(num)) {
+        ctx.beginPath();
+        ctx.arc(px, py, cell * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = '#2563eb';
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
+        ctx.fillText(num, px, py);
+        ctx.font = `${fontSize}px system-ui, sans-serif`;
+      } else if (num % 2 !== 0) {
+        ctx.fillStyle = '#e5e7eb';
+        ctx.beginPath();
+        ctx.arc(px, py, cell * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
 </script>
 </body>
 </html>
